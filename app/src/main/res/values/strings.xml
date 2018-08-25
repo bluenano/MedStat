@@ -1,0 +1,44 @@
+<resources>
+    <string name="app_name">MedStat</string>
+    <string name="temperature">Temperature</string>
+    <string name="blood_pressure">Blood Pressure</string>
+    <string name="glucose">Glucose</string>
+    <string name="pulse">Pulse</string>
+    <string name="insulin_taken">Insulin Taken</string>
+    <string name="pulse_units">bpm</string>
+    <string name="blood_pressure_units">mmHg</string>
+    <string name="glucose_units">mg/dL</string>
+    <string name="custom_value">Custom Value</string>
+    <string name="units">Units:</string>
+    <string name="choose">Choose Type</string>
+    <string name="value">Enter the value</string>
+    <string name="custom_value_name">Enter the custom value name</string>
+    <string name="time">Enter the time</string>
+    <string name="date">Enter the date</string>
+    <string name="graph">Graph</string>
+    <string name="list">List</string>
+    <string name="profile">Profile</string>
+    <string name="add_item_title">Add</string>
+    <string name="date_picker_title">Select a date</string>
+    <string name="name_hint">Enter a new name</string>
+    <string name="age_hint">Enter a new age</string>
+    <string name="weight_hint">Enter a new weight</string>
+    <string name="filter_text">Filter Graph:</string>
+    <string name="time_picker_title">Enter a time:</string>
+    <string name="no_data">There is no data to display</string>
+    <string-array name="medical_array">
+        <item>Temperature</item>
+        <item>Blood Pressure</item>
+        <item>Glucose</item>
+        <item>Pulse</item>
+        <item>Insulin Taken</item>
+        <!-- <item>Custom Value</item> -->
+    </string-array>
+    <string-array name="filter_array">
+        <item>All</item>
+        <item>1 day</item>
+        <item>7 days</item>
+        <item>30 days</item>
+        <item>365 days</item>
+    </string-array>
+</resources>
