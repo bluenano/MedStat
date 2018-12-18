@@ -1,4 +1,4 @@
-# AlphaFitness
+# MedStat
 
  Mobile application that helps user's keep track of statistics related to their health.
 
