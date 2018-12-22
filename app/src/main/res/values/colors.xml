@@ -1,7 +1,12 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <color name="colorPrimary">#3F51B5</color>
+    <color name="colorPrimary">#EF5350</color>
     <color name="colorPrimaryDark">#303F9F</color>
     <color name="colorAccent">#FF4081</color>
     <color name="white">#FFFFFF</color>
+    <color name="divider_color">#B61827</color>
+    <color name="bottom_view_color">#EF5350</color>
+    <color name="button_color">#FF6557</color>
+    <color name="status_color">#AB000D</color>
+    <color name="graph_color">#E53935</color>
 </resources>

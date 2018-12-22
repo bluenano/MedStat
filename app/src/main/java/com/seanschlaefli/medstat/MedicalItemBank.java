@@ -63,6 +63,24 @@ public class MedicalItemBank {
     }
 
 
+    public List<String> getNames() {
+        MedicalUnitCursorWrapper wrapper = queryUnits(null, null);
+        List<String> names = new ArrayList<>();
+        try {
+            if (wrapper.getCount() == 0) {
+                return names;
+            }
+            wrapper.moveToFirst();
+            while (!wrapper.isAfterLast()) {
+                names.add(wrapper.getName());
+                wrapper.moveToNext();
+            }
+        } finally {
+            wrapper.close();
+        }
+        return names;
+    }
+
     public String getUnits(String name) {
         MedicalUnitCursorWrapper wrapper = queryUnits(
                 MedicalUnitsTable.Cols.NAME + " = ?",
@@ -71,7 +89,7 @@ public class MedicalItemBank {
 
         try {
             if (wrapper.getCount() == 0) {
-                return null;
+                return "";
             }
             wrapper.moveToFirst();
             String units = wrapper.getUnits();

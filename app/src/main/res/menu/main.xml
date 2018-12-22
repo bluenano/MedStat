@@ -6,8 +6,15 @@
 
     <item
         android:id="@+id/action_add"
-        android:orderInCategory="1"
+        android:orderInCategory="2"
         app:showAsAction="ifRoom|withText"
         android:title="@string/add_item_title"
-        android:icon="@drawable/ic_add"/>
+        android:icon="@drawable/ic_add_black"/>
+
+    <item
+        android:id="@+id/action_profile"
+        android:orderInCategory="1"
+        app:showAsAction="ifRoom"
+        android:title="@string/profile"
+        android:icon="@drawable/ic_person"/>
 </menu>

@@ -26,6 +26,7 @@
     <string name="filter_text">Filter Graph:</string>
     <string name="time_picker_title">Enter a time:</string>
     <string name="no_data">There is no data to display</string>
+    <string name="custom_units">Enter the units</string>
     <string-array name="medical_array">
         <item>Temperature</item>
         <item>Blood Pressure</item>

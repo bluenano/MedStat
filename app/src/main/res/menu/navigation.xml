@@ -16,10 +16,5 @@
         android:icon="@drawable/ic_graph"
         android:title="@string/graph"/>
 
-    <item
-        android:id="@+id/profile"
-        app:showAsAction="ifRoom|withText"
-        android:icon="@drawable/ic_profile"
-        android:title="@string/profile" />
 
 </menu>

@@ -6,7 +6,6 @@ import android.os.Bundle;
 import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
 import android.support.v4.app.Fragment;
-import android.support.v4.app.FragmentActivity;
 import android.support.v4.app.FragmentManager;
 import android.util.Log;
 import android.view.LayoutInflater;
@@ -23,6 +22,8 @@ import android.widget.Toast;
 
 import org.joda.time.DateTime;
 
+import java.util.List;
+
 
 public class AddMedFragment extends Fragment {
 
@@ -34,9 +35,10 @@ public class AddMedFragment extends Fragment {
     private static String DIALOG_TIME = "DialogTime";
     private static String DATE_INDEX = "date_index";
 
-    private Spinner mMedValueSpinner;
+    private Spinner mSpinner;
     private TextView mUnits;
     private EditText mCustomValueName;
+    private EditText mCustomUnits;
     private EditText mMedValue;
     private Button mTimeButton;
     private Button mDateButton;
@@ -49,9 +51,10 @@ public class AddMedFragment extends Fragment {
     public View onCreateView(@NonNull LayoutInflater inflater, @Nullable ViewGroup container, @Nullable Bundle savedInstanceState) {
         View v = inflater.inflate(R.layout.fragment_add_med, container, false);
 
-        mMedValueSpinner = v.findViewById(R.id.med_select_spinner);
+        mSpinner = v.findViewById(R.id.med_select_spinner);
         mUnits = v.findViewById(R.id.units_text_view);
         mCustomValueName = v.findViewById(R.id.custom_value_edit_text);
+        mCustomUnits = v.findViewById(R.id.custom_units_edit_text);
         mMedValue = v.findViewById(R.id.med_value_edit_text);
         mTimeButton = v.findViewById(R.id.time_button);
         mDateButton = v.findViewById(R.id.date_button);
@@ -64,27 +67,7 @@ public class AddMedFragment extends Fragment {
             mDateTime = (DateTime) savedInstanceState.getSerializable(DATE_INDEX);
         }
 
-        attachAdapterToSpinner(mMedValueSpinner, R.array.medical_array);
-
-        mMedValueSpinner.setOnItemSelectedListener(new AdapterView.OnItemSelectedListener() {
-            @Override
-            public void onItemSelected(AdapterView<?> parent, View view, int position, long id) {
-                String selected = (String) parent.getItemAtPosition(position);
-                if (selected.equals(getResources().getString(R.string.custom_value))) {
-                    setVisibilityForCustomFields(View.VISIBLE);
-                } else {
-                    mCustomValueName.setVisibility(View.INVISIBLE);
-                    setVisibilityForFields(View.VISIBLE);
-                }
-                updateUnits(selected);
-            }
-
-            @Override
-            public void onNothingSelected(AdapterView<?> parent) {
-                setVisibilityForCustomFields(View.INVISIBLE);
-            }
-        });
-
+        setSpinnerData();
 
         mTimeButton.setOnClickListener(new View.OnClickListener() {
             @Override
@@ -110,7 +93,7 @@ public class AddMedFragment extends Fragment {
 
         updateDate();
         updateTime();
-        updateUnits((String) mMedValueSpinner.getSelectedItem());
+        updateUnits((String) mSpinner.getSelectedItem());
 
         return v;
     }
@@ -138,16 +121,37 @@ public class AddMedFragment extends Fragment {
         }
     }
 
-
-    private void attachAdapterToSpinner(Spinner spinner, int arrResId) {
-        ArrayAdapter<CharSequence> adapter = ArrayAdapter.createFromResource(
-                super.getActivity(),
-                arrResId,
-                android.R.layout.simple_spinner_item);
+    private void setSpinnerData() {
+        List<String> names = MedicalItemBank.get(getContext()).getNames();
+        names.add(getResources().getString(R.string.custom_value));
+        ArrayAdapter<String> adapter = new ArrayAdapter<>(getContext(),
+                R.layout.my_spinner_item,
+                names);
         adapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
-        spinner.setAdapter(adapter);
+        mSpinner.setAdapter(adapter);
+        attachSpinnerListener();
     }
 
+    private void attachSpinnerListener() {
+        mSpinner.setOnItemSelectedListener(new AdapterView.OnItemSelectedListener() {
+            @Override
+            public void onItemSelected(AdapterView<?> parent, View view, int position, long id) {
+                String selected = (String) parent.getItemAtPosition(position);
+                if (selected.equals(getResources().getString(R.string.custom_value))) {
+                    setVisibilityForCustomFields(View.VISIBLE);
+                } else {
+                    mCustomValueName.setVisibility(View.INVISIBLE);
+                    setVisibilityForFields(View.VISIBLE);
+                }
+                updateUnits(selected);
+            }
+
+            @Override
+            public void onNothingSelected(AdapterView<?> parent) {
+                setVisibilityForCustomFields(View.INVISIBLE);
+            }
+        });
+    }
 
     private void handleTimeButtonClick() {
         FragmentManager fm = getFragmentManager();
@@ -166,7 +170,7 @@ public class AddMedFragment extends Fragment {
 
 
     private void handleAddButtonClick() {
-        String selected = (String) mMedValueSpinner.getSelectedItem();
+        String selected = (String) mSpinner.getSelectedItem();
         if (selected != null) {
             if (editTextIsEmpty(mMedValue)) {
                 alertUserOnEntryError(mMedValue, "Enter the value");
@@ -206,7 +210,7 @@ public class AddMedFragment extends Fragment {
 
 
     private void addItemToDatabase() {
-        String name = (String) mMedValueSpinner.getSelectedItem();
+        String name = (String) mSpinner.getSelectedItem();
         double value = Double.parseDouble(mMedValue.getText().toString());
         String units = (String) mUnits.getText();
         MedicalItem item = new MedicalItem(name, value, units, new DateTime(mDateTime));
@@ -230,6 +234,7 @@ public class AddMedFragment extends Fragment {
         if (visibility == View.VISIBLE || visibility == View.INVISIBLE
                 || visibility == View.GONE ) {
             mCustomValueName.setVisibility(visibility);
+            mCustomUnits.setVisibility(visibility);
             setVisibilityForFields(visibility);
         }
     }

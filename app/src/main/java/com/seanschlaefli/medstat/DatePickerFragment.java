@@ -62,6 +62,7 @@ public class DatePickerFragment extends DialogFragment {
         bundle.putSerializable(ARG_MED_DATE, date);
 
         DatePickerFragment fragment = new DatePickerFragment();
+        fragment.setStyle(STYLE_NORMAL, R.style.PickerTheme);
         fragment.setArguments(bundle);
         return fragment;
     }

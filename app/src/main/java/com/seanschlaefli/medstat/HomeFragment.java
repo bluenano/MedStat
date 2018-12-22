@@ -1,6 +1,5 @@
 package com.seanschlaefli.medstat;
 
-import android.app.Activity;
 import android.content.Intent;
 import android.os.Bundle;
 import android.support.annotation.NonNull;
@@ -19,30 +18,27 @@ import android.widget.AdapterView;
 import android.widget.ArrayAdapter;
 import android.widget.Spinner;
 
-import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.List;
 import java.util.UUID;
 
 public class HomeFragment extends Fragment {
 
     private BottomNavigationView mToolbar;
-    private Fragment mDisplayFragment;
-    private Fragment mListFragment;
-    private Fragment mGraphFragment;
+    private Spinner mSpinner;
+
+    private MedicalItemListFragment mListFragment;
+    private MedicalGraphFragment mGraphFragment;
 
     private static final String TAG = "HomeFragment";
-    private static final String DISPLAY_KEY = "display_key";
+    private static final String SPINNER_KEY = "spinner_key";
 
     private static final int REQUEST_ADD_MED = 0;
-
 
     @Override
     public void onCreate(@Nullable Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setHasOptionsMenu(true);
     }
-
 
     @Nullable
     @Override
@@ -52,13 +48,24 @@ public class HomeFragment extends Fragment {
         mToolbar = view.findViewById(R.id.navigation_view);
         mToolbar.setOnNavigationItemSelectedListener(createToolbarListener());
 
-        mDisplayFragment = null;
-        mListFragment = MedicalItemListFragment.newInstance();
-        mGraphFragment = MedicalItemGraphViewFragment.newInstance();
+        mSpinner = view.findViewById(R.id.med_data_spinner);
+        setSpinnerData();
+
+        mSpinner.setOnItemSelectedListener(new AdapterView.OnItemSelectedListener() {
+            @Override
+            public void onItemSelected(AdapterView<?> parent, View view, int position, long id) {
+                String selection = (String) parent.getItemAtPosition(position);
+                updateFragments(selection);
+                Log.d(TAG, "selection is " + selection);
+            }
+
+            @Override
+            public void onNothingSelected(AdapterView<?> parent) {}
+        });
+
 
         if (savedInstanceState != null) {
-            String tag = savedInstanceState.getString(DISPLAY_KEY);
-            showFragment(tag);
+            mSpinner.setSelection(savedInstanceState.getInt(SPINNER_KEY));
         } else {
             mToolbar.setSelectedItemId(R.id.list);
         }
@@ -66,13 +73,11 @@ public class HomeFragment extends Fragment {
         return view;
     }
 
-
     @Override
     public void onCreateOptionsMenu(Menu menu, MenuInflater inflater) {
         super.onCreateOptionsMenu(menu, inflater);
         inflater.inflate(R.menu.main, menu);
     }
-
 
     @Override
     public boolean onOptionsItemSelected(MenuItem item) {
@@ -87,109 +92,68 @@ public class HomeFragment extends Fragment {
 
     }
 
-
-    @Override
-    public void onActivityResult(int requestCode, int resultCode, Intent data) {
-        if (resultCode != Activity.RESULT_OK) {
-            return;
-        }
-
-        /*
-        if (requestCode == REQUEST_ADD_MED &&
-                mDisplayFragment.getTag() != null) {
-            sendUpdateToDisplayFragment((String) mSpinner.getSelectedItem(),
-                    mDisplayFragment.getTag());
-        }
-        */
-    }
-
-
     @Override
     public void onSaveInstanceState(@NonNull Bundle outState) {
         super.onSaveInstanceState(outState);
-        outState.putString(DISPLAY_KEY, mDisplayFragment.getTag());
+        outState.putInt(SPINNER_KEY, mSpinner.getSelectedItemPosition());
     }
-
 
     @Override
     public void onResume() {
         super.onResume();
-        if (mDisplayFragment.getTag() != null) {
-            showFragment(mDisplayFragment.getTag());
-        }
     }
 
     @Override
     public void onPause() {
         super.onPause();
-        hideFragment(mDisplayFragment.getTag());
     }
 
-    private void updateDisplayFragment(Fragment current, String tag) {
-        hideFragment(current.getTag());
-        showFragment(tag);
-        sendUpdateToDisplayFragment(tag);
-    }
-
-
-    private void showFragment(String tag) {
-        FragmentManager fm = getFragmentManager();
-
-        try {
-            mDisplayFragment = fm.findFragmentByTag(tag);
-
-            if (mDisplayFragment == null) {
-                setDisplayFragment(tag);
-                fm.beginTransaction()
-                        .add(R.id.display_fragment_container, mDisplayFragment, tag)
-                        .commit();
-            } else {
-                fm.beginTransaction()
-                        .show(mDisplayFragment)
-                        .commit();
-            }
-        } catch (NullPointerException e) {
-            // handle this
+    private void updateFragments(String name) {
+        if (mListFragment != null) {
+            mListFragment.updateList(name);
+        } else {
+            mListFragment = MedicalItemListFragment.newInstance(name);
+        }
+        if (mGraphFragment != null) {
+            mGraphFragment.updateGraph(name);
+        } else {
+            mGraphFragment = MedicalGraphFragment.newInstance(name);
         }
     }
 
-
-    private void hideFragment(String tag) {
-        FragmentManager fm = getFragmentManager();
-        try {
-            Fragment fragment = fm.findFragmentByTag(tag);
-
-            if (fragment != null) {
-                fm.beginTransaction()
-                        .hide(fragment)
-                        .commit();
-            }
-        } catch (NullPointerException e) {
-            // handle this
-        }
-    }
-
-
-    private void setDisplayFragment(String tag) {
+    private void updateDisplay(String tag) {
+        String selection = (String) mSpinner.getSelectedItem();
         if (tag.equals(MedicalItemListFragment.TAG)) {
-            mDisplayFragment = mListFragment;
-        } else if (tag.equals(MedicalItemGraphViewFragment.TAG)) {
-            mDisplayFragment = mGraphFragment;
+            mListFragment = MedicalItemListFragment.newInstance(selection);
+            replaceDisplay(mListFragment);
+        } else if (tag.equals(MedicalGraphFragment.TAG)) {
+            mGraphFragment = MedicalGraphFragment.newInstance(selection);
+            replaceDisplay(mGraphFragment);
         }
     }
 
 
-    private void sendUpdateToDisplayFragment(String tag) {
-        if (tag.equals(MedicalItemListFragment.TAG)) {
-            MedicalItemListFragment list = (MedicalItemListFragment) mDisplayFragment;
-            //list.updateMedicalItemDisplay();
-        } else if (tag.equals(MedicalItemGraphViewFragment.TAG)) {
-            MedicalItemGraphViewFragment graph = (MedicalItemGraphViewFragment) mDisplayFragment;
-            //graph.updateGraphViewDisplay(name);
+    private void replaceDisplay(Fragment fragment) {
+        if (fragment != null) {
+            Log.d(TAG, "Replacing the display fragment");
+            FragmentManager fm = getFragmentManager();
+            fm.beginTransaction()
+                    .replace(R.id.display_fragment_container, fragment)
+                    .commit();
         }
     }
 
-
+    private void setSpinnerData() {
+        List<String> names = MedicalItemBank.get(getContext()).getNames();
+        for (String s: names) {
+            Log.d(TAG, s);
+        }
+        ArrayAdapter<String> adapter = new ArrayAdapter<>(getContext(),
+                R.layout.my_spinner_item,
+                names);
+        adapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
+        mSpinner.setAdapter(adapter);
+    }
 
     private BottomNavigationView.OnNavigationItemSelectedListener createToolbarListener() {
         return new BottomNavigationView.OnNavigationItemSelectedListener() {
@@ -197,14 +161,12 @@ public class HomeFragment extends Fragment {
             public boolean onNavigationItemSelected(@NonNull MenuItem item) {
                 switch (item.getItemId()) {
                     case R.id.list:
-                        updateDisplayFragment(mDisplayFragment, MedicalItemListFragment.TAG);
+                        Log.d(TAG, "clicked list");
+                        updateDisplay(MedicalItemListFragment.TAG);
                         return true;
                     case R.id.graph:
-                        updateDisplayFragment(mDisplayFragment, MedicalItemGraphViewFragment.TAG);
-                        return true;
-                    case R.id.profile:
-                        hideFragment(mDisplayFragment.getTag());
-                        //showFragment(MedicalProfileFragment.TAG);
+                        Log.d(TAG, "clicked graph");
+                        updateDisplay(MedicalGraphFragment.TAG);
                         return true;
                     default:
                         return false;
@@ -212,4 +174,5 @@ public class HomeFragment extends Fragment {
             }
         };
     }
+
 }

@@ -11,6 +11,9 @@ public class MedicalUnitCursorWrapper extends CursorWrapper {
         super(cursor);
     }
 
+    public String getName() {
+        return getString(getColumnIndex(MedicalUnitsTable.Cols.NAME));
+    }
     public String getUnits() {
         return getString(getColumnIndex(MedicalUnitsTable.Cols.UNITS));
     }

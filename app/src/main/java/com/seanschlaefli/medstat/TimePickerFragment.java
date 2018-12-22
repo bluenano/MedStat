@@ -81,6 +81,7 @@ public class TimePickerFragment extends DialogFragment {
 
         TimePickerFragment fragment = new TimePickerFragment();
         fragment.setArguments(args);
+        fragment.setStyle(STYLE_NORMAL, R.style.PickerTheme);
         return fragment;
     }
 

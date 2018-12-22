@@ -1,10 +1,10 @@
 package com.seanschlaefli.medstat;
 
-import android.content.Context;
 import android.support.v4.app.Fragment;
 import android.os.Bundle;
 import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
+import android.support.v4.content.res.ResourcesCompat;
 import android.support.v7.widget.DividerItemDecoration;
 import android.support.v7.widget.LinearLayoutManager;
 import android.support.v7.widget.RecyclerView;
@@ -12,37 +12,73 @@ import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
-import android.widget.ArrayAdapter;
-import android.widget.Spinner;
 import android.widget.TextView;
 
-import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.List;
 
 public class MedicalItemListFragment extends Fragment {
 
     public static final String TAG = "MedicalItemListFragment";
     private static final String ARG_NAME = "name";
-    private static final String SPINNER_DATA_KEY = "spinner_data_key";
 
     private RecyclerView mMedicalItemRecyclerView;
     private MedicalItemAdapter mAdapter;
-    private Spinner mNameSpinner;
     private TextView mNoDataTextView;
 
-    private ArrayList<String> mSpinnerData;
+    private String mName = null;
 
-    public void updateMedicalItemDisplay(String name) {
+    @Override
+    public void onCreate(@Nullable Bundle savedInstanceState) {
+        super.onCreate(savedInstanceState);
+    }
 
-        MedicalItemBank medicalItemBank = MedicalItemBank.get(SingleFragmentActivity.sContext);
-        List<MedicalItem> medicalItems = medicalItemBank.getMedicalItemsByName((String) mNameSpinner.getSelectedItem());
+    @Nullable
+    @Override
+    public View onCreateView(LayoutInflater inflater, @Nullable ViewGroup container, Bundle savedInstanceState) {
+        View view = inflater.inflate(R.layout.fragment_med_list, container, false);
 
-        for (MedicalItem item: medicalItems) {
-            Log.d(TAG, item.toString());
+        mNoDataTextView = (TextView) view.findViewById(R.id.no_data_text_view);
+        mMedicalItemRecyclerView = (RecyclerView) view.findViewById(R.id.med_data_list);
+        if (getActivity() != null) {
+            mMedicalItemRecyclerView.setLayoutManager(new LinearLayoutManager(getActivity()));
+            DividerItemDecoration decor = new DividerItemDecoration(getActivity(),
+                    DividerItemDecoration.VERTICAL);
+            decor.setDrawable(ResourcesCompat.getDrawable(
+                    getResources(), R.drawable.custom_divider, null
+            ));
+            mMedicalItemRecyclerView.addItemDecoration(decor);
         }
 
+        Bundle args = getArguments();
+        if (args != null) {
+            mName = args.getString(ARG_NAME);
+        }
+
+        updateList(mName);
+        return view;
+    }
+
+    @Override
+    public void onResume() {
+        super.onResume();
+        updateList(mName);
+    }
+
+    private void setVisibility(boolean visibility) {
+        if (visibility) {
+            mMedicalItemRecyclerView.setVisibility(View.VISIBLE);
+            mNoDataTextView.setVisibility(View.INVISIBLE);
+        } else {
+            mMedicalItemRecyclerView.setVisibility(View.INVISIBLE);
+            mNoDataTextView.setVisibility(View.VISIBLE);
+        }
+    }
+
+    public void updateList(String name) {
+        MedicalItemBank medicalItemBank = MedicalItemBank.get(SingleFragmentActivity.sContext);
+        List<MedicalItem> medicalItems = medicalItemBank.getMedicalItemsByName(name);
         if (mMedicalItemRecyclerView != null) {
+            Log.d(TAG, "Updating list with new data from " + name);
             if (mAdapter == null) {
                 mAdapter = new MedicalItemAdapter(medicalItems);
                 mMedicalItemRecyclerView.setAdapter(mAdapter);
@@ -50,69 +86,20 @@ public class MedicalItemListFragment extends Fragment {
                 mAdapter.setMedicalItems(medicalItems);
                 mAdapter.notifyDataSetChanged();
             }
+            if (medicalItems.size() > 0) {
+                setVisibility(true);
+            } else {
+                setVisibility(false);
+            }
         }
     }
 
-    @Override
-    public void onCreate(@Nullable Bundle savedInstanceState) {
-        super.onCreate(savedInstanceState);
-    }
-
-
-    @Nullable
-    @Override
-    public View onCreateView(LayoutInflater inflater, @Nullable ViewGroup container, Bundle savedInstanceState) {
-        View view = inflater.inflate(R.layout.fragment_med_data_list, container, false);
-
-        mNoDataTextView = (TextView) view.findViewById(R.id.no_data_text_view);
-        mMedicalItemRecyclerView = (RecyclerView) view.findViewById(R.id.med_data_list);
-        mNameSpinner = (Spinner) view.findViewById(R.id.name_spinner);
-
-        if (savedInstanceState != null) {
-            mSpinnerData = savedInstanceState.getStringArrayList(SPINNER_DATA_KEY);
-        } else {
-            setSpinnerData();
-        }
-
-        if (getActivity() != null) {
-            mMedicalItemRecyclerView.setLayoutManager(new LinearLayoutManager(getActivity()));
-            mMedicalItemRecyclerView.addItemDecoration(
-                    new DividerItemDecoration(getActivity(),
-                            DividerItemDecoration.VERTICAL)
-            );
-        }
-
-        attachAdapter(mNameSpinner);
-
-        updateMedicalItemDisplay((String) mNameSpinner.getSelectedItem());
-        return view;
-    }
-
-
-    @Override
-    public void onSaveInstanceState(@NonNull Bundle outState) {
-        super.onSaveInstanceState(outState);
-        outState.putStringArrayList(SPINNER_DATA_KEY, mSpinnerData);
-    }
-
-
-    private void attachAdapter(Spinner spinner) {
-        ArrayAdapter<String> adapter = new ArrayAdapter<>(super.getActivity(),
-                android.R.layout.simple_spinner_item,
-                mSpinnerData);
-        adapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
-        spinner.setAdapter(adapter);
-    }
-
-
-    private void setSpinnerData() {
-        String[] data = getResources().getStringArray(R.array.medical_array);
-        mSpinnerData = new ArrayList<>(Arrays.asList(data));
-    }
-
-
-    public static Fragment newInstance() {
-       return new MedicalItemListFragment();
+    public static MedicalItemListFragment newInstance(String name) {
+        Bundle args = new Bundle();
+        args.putString(ARG_NAME, name);
+        MedicalItemListFragment fragment = new MedicalItemListFragment();
+        fragment.setArguments(args);
+        return fragment;
     }
 
     private class MedicalItemHolder extends RecyclerView.ViewHolder
