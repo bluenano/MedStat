@@ -4,6 +4,7 @@ import android.content.ContentValues;
 import android.content.Context;
 import android.database.Cursor;
 import android.database.sqlite.SQLiteDatabase;
+import android.util.Log;
 
 import com.seanschlaefli.medstat.database.MedStatBaseHelper;
 import com.seanschlaefli.medstat.database.MedicalItemCursorWrapper;
@@ -16,6 +17,8 @@ import java.util.List;
 import java.util.UUID;
 
 public class MedicalItemBank {
+
+    public final String TAG = MedicalItemBank.this.getClass().getSimpleName();
 
     private static MedicalItemBank sMedicalItemBank;
 
@@ -115,6 +118,18 @@ public class MedicalItemBank {
     }
 
 
+    public List<MedicalItem> getMedicalItemsByName(String name, long startTime, long endTime) {
+        List<MedicalItem> items = getMedicalItemsByName(name);
+        List<MedicalItem> filteredItems = new ArrayList<>();
+        for (MedicalItem item: items) {
+            long time = item.getDateTime().getMillis();
+            if (time >= startTime && time <= endTime) {
+                filteredItems.add(item);
+            }
+        }
+        return filteredItems;
+    }
+
     private List<MedicalItem> getItemsFromCursor(MedicalItemCursorWrapper cursor) {
         List<MedicalItem> items = new ArrayList<>();
         cursor.moveToFirst();
@@ -131,6 +146,12 @@ public class MedicalItemBank {
         mDatabase.insert(MedicalItemTable.NAME, null, values);
     }
 
+    public void addCustomValue(String name, String units) {
+        ContentValues values = new ContentValues();
+        values.put(MedicalUnitsTable.Cols.NAME, name);
+        values.put(MedicalUnitsTable.Cols.UNITS, units);
+        mDatabase.insert(MedicalUnitsTable.NAME, null, values);
+    }
 
     public void updateMedicalItem(MedicalItem item) {
         String uuid = item.getId().toString();
@@ -179,6 +200,13 @@ public class MedicalItemBank {
                 null
         );
         return new MedicalUnitCursorWrapper(cursor);
+    }
+
+    public boolean isUniqueName(String name) {
+        MedicalUnitCursorWrapper wrapper = queryUnits("name = ?",
+                new String[] {name});
+        Log.d(TAG, "Count is " + Integer.toString(wrapper.getCount()));
+        return wrapper.getCount() == 0;
     }
 
 }

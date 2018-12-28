@@ -14,5 +14,9 @@ public class HomeActivity extends SingleFragmentActivity {
         return new HomeFragment();
     }
 
+    @Override
+    public String getBundleName() {
+        return null;
+    }
 
 }

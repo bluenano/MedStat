@@ -19,7 +19,7 @@ public class FormatDateTime {
 
 
     public static String getFormattedDateString(DateTime date) {
-        DateTimeFormatter formatter = DateTimeFormat.forPattern("MMMM d, yyyy");
+        DateTimeFormatter formatter = DateTimeFormat.forPattern("MMMM d");
         return date.toString(formatter);
     }
 

@@ -14,19 +14,21 @@ import android.view.View;
 import android.view.ViewGroup;
 import android.widget.TextView;
 
+import java.util.Calendar;
 import java.util.List;
 
 public class MedicalItemListFragment extends Fragment {
 
     public static final String TAG = "MedicalItemListFragment";
     private static final String ARG_NAME = "name";
+    private static final String ARG_FILTER = "filter";
 
     private RecyclerView mMedicalItemRecyclerView;
     private MedicalItemAdapter mAdapter;
     private TextView mNoDataTextView;
 
     private String mName = null;
-
+    private long mFilterInMS = -1;
     @Override
     public void onCreate(@Nullable Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -52,16 +54,17 @@ public class MedicalItemListFragment extends Fragment {
         Bundle args = getArguments();
         if (args != null) {
             mName = args.getString(ARG_NAME);
+            mFilterInMS = args.getLong(ARG_FILTER);
         }
 
-        updateList(mName);
+        updateList(mName, mFilterInMS);
         return view;
     }
 
     @Override
     public void onResume() {
         super.onResume();
-        updateList(mName);
+        updateList(mName, mFilterInMS);
     }
 
     private void setVisibility(boolean visibility) {
@@ -74,19 +77,26 @@ public class MedicalItemListFragment extends Fragment {
         }
     }
 
-    public void updateList(String name) {
-        MedicalItemBank medicalItemBank = MedicalItemBank.get(SingleFragmentActivity.sContext);
-        List<MedicalItem> medicalItems = medicalItemBank.getMedicalItemsByName(name);
+    public void updateList(String name, long filterInMS) {
+        if (name == null || filterInMS == -1) {
+            return;
+        }
+        List<MedicalItem> filteredItems = MedicalItemFilter.filterByTime(
+                MedicalItemBank.get(SingleFragmentActivity.sContext)
+                .getMedicalItemsByName(name),
+                Calendar.getInstance().getTimeInMillis(),
+                filterInMS
+        );
         if (mMedicalItemRecyclerView != null) {
             Log.d(TAG, "Updating list with new data from " + name);
             if (mAdapter == null) {
-                mAdapter = new MedicalItemAdapter(medicalItems);
+                mAdapter = new MedicalItemAdapter(filteredItems);
                 mMedicalItemRecyclerView.setAdapter(mAdapter);
             } else {
-                mAdapter.setMedicalItems(medicalItems);
+                mAdapter.setMedicalItems(filteredItems);
                 mAdapter.notifyDataSetChanged();
             }
-            if (medicalItems.size() > 0) {
+            if (filteredItems.size() > 0) {
                 setVisibility(true);
             } else {
                 setVisibility(false);
@@ -94,9 +104,10 @@ public class MedicalItemListFragment extends Fragment {
         }
     }
 
-    public static MedicalItemListFragment newInstance(String name) {
+    public static MedicalItemListFragment newInstance(String name, long filterInMS) {
         Bundle args = new Bundle();
         args.putString(ARG_NAME, name);
+        args.putLong(ARG_FILTER, filterInMS);
         MedicalItemListFragment fragment = new MedicalItemListFragment();
         fragment.setArguments(args);
         return fragment;

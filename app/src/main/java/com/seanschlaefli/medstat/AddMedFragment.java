@@ -17,11 +17,13 @@ import android.widget.Button;
 import android.widget.EditText;
 import android.widget.ImageButton;
 import android.widget.Spinner;
+import android.widget.SpinnerAdapter;
 import android.widget.TextView;
 import android.widget.Toast;
 
 import org.joda.time.DateTime;
 
+import java.util.Arrays;
 import java.util.List;
 
 
@@ -68,7 +70,14 @@ public class AddMedFragment extends Fragment {
         }
 
         setSpinnerData();
+        Bundle args = getArguments();
+        if (args != null) {
+            String name = args.getString(AddMedActivity.EXTRA_NAME, null);
+            if (name != null) {
+                mSpinner.setSelection(findPosition(mSpinner.getAdapter(), name));
 
+            }
+        }
         mTimeButton.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
@@ -124,9 +133,11 @@ public class AddMedFragment extends Fragment {
     private void setSpinnerData() {
         List<String> names = MedicalItemBank.get(getContext()).getNames();
         names.add(getResources().getString(R.string.custom_value));
+        String[] namesArr = MedStatUtil.stringListToArr(names);
+        Arrays.sort(namesArr);
         ArrayAdapter<String> adapter = new ArrayAdapter<>(getContext(),
                 R.layout.my_spinner_item,
-                names);
+                namesArr);
         adapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
         mSpinner.setAdapter(adapter);
         attachSpinnerListener();
@@ -140,7 +151,7 @@ public class AddMedFragment extends Fragment {
                 if (selected.equals(getResources().getString(R.string.custom_value))) {
                     setVisibilityForCustomFields(View.VISIBLE);
                 } else {
-                    mCustomValueName.setVisibility(View.INVISIBLE);
+                    setVisibilityForCustomFields(View.INVISIBLE);
                     setVisibilityForFields(View.VISIBLE);
                 }
                 updateUnits(selected);
@@ -170,18 +181,32 @@ public class AddMedFragment extends Fragment {
 
 
     private void handleAddButtonClick() {
+        String customValue = getResources().getString(R.string.custom_value);
         String selected = (String) mSpinner.getSelectedItem();
+        String name = selected.equals(customValue) ?
+                mCustomValueName.getText().toString() :
+                selected;
         if (selected != null) {
-            if (editTextIsEmpty(mMedValue)) {
+            if (isEditTextEmpty(mMedValue)) {
                 alertUserOnEntryError(mMedValue, "Enter the value");
-            } else if (selected.equals(getResources().getString(R.string.custom_value))
+            } else if (selected.equals(customValue)
                     &&
-                    editTextIsEmpty(mCustomValueName)) {
+                    isEditTextEmpty(mCustomValueName)) {
                 alertUserOnEntryError(mCustomValueName, "Enter the name for this custom value");
+            } else if (selected.equals(customValue)
+                    &&
+                    !isUniqueName(name)) {
+                alertUserOnEntryError(mCustomValueName, "This custom value already exists");
+            } else if (selected.equals(customValue)
+                    &&
+                   isEditTextEmpty(mCustomUnits)) {
+                alertUserOnEntryError(mCustomUnits, "Enter the units for this custom value");
             } else {
                 try {
-                    addItemToDatabase();
-                    getActivity().setResult(Activity.RESULT_OK);
+                    saveItem();
+                    Log.d(TAG, "Putting name in return intent: " + name);
+                    getActivity().setResult(Activity.RESULT_OK,
+                            HomeFragment.newIntent(name));
                     getActivity().finish();
                 } catch (NumberFormatException e) {
                     alertUserOnEntryError(mMedValue, "Enter a numeric value");
@@ -209,16 +234,29 @@ public class AddMedFragment extends Fragment {
     }
 
 
-    private void addItemToDatabase() {
+    private void saveItem() {
         String name = (String) mSpinner.getSelectedItem();
         double value = Double.parseDouble(mMedValue.getText().toString());
-        String units = (String) mUnits.getText();
-        MedicalItem item = new MedicalItem(name, value, units, new DateTime(mDateTime));
+        String units = mUnits.getText().toString();
         MedicalItemBank items = MedicalItemBank.get(getActivity());
+        if (name.equals(getResources().getString(R.string.custom_value))) {
+            name = mCustomValueName.getText().toString();
+            units = mCustomUnits.getText().toString();
+            items.addCustomValue(name, units);
+        }
+        MedicalItem item = new MedicalItem(name, value, units, new DateTime(mDateTime));
         items.addMedicalItem(item);
-        Log.d(TAG, item.getUnits());
     }
 
+    private int findPosition(SpinnerAdapter adapter, String name) {
+        for (int i = 0; i < adapter.getCount(); i++) {
+            String current = (String) adapter.getItem(i);
+            if (name.equals(current)) {
+                return i;
+            }
+        }
+        return 0;
+    }
 
     private void setVisibilityForFields(int visibility) {
         if (visibility == View.VISIBLE || visibility == View.INVISIBLE
@@ -251,9 +289,12 @@ public class AddMedFragment extends Fragment {
     }
 
 
-    private boolean editTextIsEmpty(EditText e) {
+    private boolean isEditTextEmpty(EditText e) {
         return e.getText().length() == 0;
     }
 
+    private boolean isUniqueName(String name) {
+        return MedicalItemBank.get(getActivity()).isUniqueName(name);
+    }
 }
 

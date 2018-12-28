@@ -9,4 +9,5 @@
     <color name="button_color">#FF6557</color>
     <color name="status_color">#AB000D</color>
     <color name="graph_color">#E53935</color>
+    <color name="edit_text_color">#EAF0E8</color>
 </resources>

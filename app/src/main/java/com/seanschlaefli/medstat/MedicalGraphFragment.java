@@ -17,26 +17,22 @@ import com.github.mikephil.charting.data.LineDataSet;
 import com.github.mikephil.charting.interfaces.datasets.ILineDataSet;
 
 import java.util.ArrayList;
+import java.util.Calendar;
 import java.util.List;
 
 public class MedicalGraphFragment extends Fragment {
 
     public static final String TAG = "GraphViewFragment";
     private static final String ARG_NAME = "name";
-
-    private static final String ALL = "All";
-    private static final String YESTERDAY = "1 day";
-    private static final String LAST_WEEK = "7 days";
-    private static final String LAST_MONTH = "30 days";
-    private static final String LAST_YEAR = "365 days";
-
-    private static final long MILLIS_PER_DAY = 86400000;
+    private static final String ARG_FILTER = "filter";
 
     private LineChart mLineChart;
     private LineDataSet mLineData;
 
     private TextView mNoData;
-    private String mMedItemName;
+
+    private String mName = null;
+    private long mFilterInMS = -1;
 
     @Override
     public void onCreate(@Nullable Bundle savedInstanceState) {
@@ -54,39 +50,49 @@ public class MedicalGraphFragment extends Fragment {
 
         Bundle args = getArguments();
         if (args != null) {
-            mMedItemName = args.getString(ARG_NAME);
+            mName = args.getString(ARG_NAME);
+            mFilterInMS = args.getLong(ARG_FILTER);
         }
 
-        updateGraph(mMedItemName);
+        updateGraph(mName, mFilterInMS);
         return view;
     }
 
-    public void updateGraph(String name) {
+    public void updateGraph(String name, long filterInMS) {
+        if (name == null || filterInMS == -1) {
+            return;
+        }
         if (mLineChart != null) {
-            List<MedicalItem> medicalItems =
-                    MedicalItemBank.get(getContext()).getMedicalItemsByName(name);
-            if (medicalItems.size() == 0) {
+            List<MedicalItem> filteredItems =
+                    MedicalItemFilter.filterByTime(
+                            MedicalItemBank.get(getContext()).getMedicalItemsByName(name),
+                            Calendar.getInstance().getTimeInMillis(),
+                            filterInMS
+                    );
+            if (filteredItems.size() == 0) {
                 updateVisibility(View.INVISIBLE, View.VISIBLE);
             } else {
-                initializeLineData(name, medicalItems);
+                initializeLineData(name, filteredItems);
                 updateVisibility(View.VISIBLE, View.INVISIBLE);
             }
         }
     }
 
     private void initializeLineData(String name, List<MedicalItem> medicalItems) {
-        List<Entry> values = new ArrayList<>();
-        for (MedicalItem item: medicalItems) {
-            values.add(new Entry(
-                    (float) item.getDateTime().getMillis(),
-                    (float) item.getValue()));
+        if (isAdded()) {
+            List<Entry> values = new ArrayList<>();
+            for (MedicalItem item : medicalItems) {
+                values.add(new Entry(
+                        (float) item.getDateTime().getMillis(),
+                        (float) item.getValue()));
+            }
+            mLineData = new LineDataSet(values, name);
+            mLineData.setDrawCircles(false);
+            mLineData.setColor(ContextCompat.getColor(getActivity(), R.color.graph_color));
+            mLineChart.getDescription().setText("");
+            mLineChart.getXAxis().setDrawGridLines(false);
+            setLineChartData();
         }
-        mLineData = new LineDataSet(values, name);
-        mLineData.setDrawCircles(false);
-        mLineData.setColor(ContextCompat.getColor(getActivity(), R.color.graph_color));
-        mLineChart.getDescription().setText("");
-        mLineChart.getXAxis().setDrawGridLines(false);
-        setLineChartData();
     }
 
     private void setLineChartData() {
@@ -113,26 +119,12 @@ public class MedicalGraphFragment extends Fragment {
         mNoData.setVisibility(noDataVisibility);
     }
 
-    private static long getMillisAmountFromFilter(String filter, long currentTime) {
-        switch (filter) {
-            case ALL:
-                return currentTime;
-            case YESTERDAY:
-                return MILLIS_PER_DAY;
-            case LAST_WEEK:
-                return 7 * MILLIS_PER_DAY;
-            case LAST_MONTH:
-                return 30 * MILLIS_PER_DAY;
-            case LAST_YEAR:
-                return 365 * MILLIS_PER_DAY;
-            default:
-                return 0;
-        }
-    }
 
-    public static MedicalGraphFragment newInstance(String name) {
+
+    public static MedicalGraphFragment newInstance(String name, long filterInMS) {
         Bundle args = new Bundle();
         args.putString(ARG_NAME, name);
+        args.putLong(ARG_FILTER, filterInMS);
 
         MedicalGraphFragment fragment = new MedicalGraphFragment();
         fragment.setArguments(args);

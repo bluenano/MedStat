@@ -13,15 +13,26 @@ public class AddMedActivity extends SingleFragmentActivity {
 
     private static String EXTRA_MED_ID =
             "com.seanschlaefli.medstat.med_id";
+    public static String EXTRA_NAME =
+            "com.seanschlaefli.medstat.name";
+    private static String EXTRA_BUNDLE =
+            "com.seanschlaefli.medstat.bundle_name";
 
-    public static Intent newIntent(Context packageContext, UUID medId) {
+    public static Intent newIntent(Context packageContext, String name) {
         Intent intent = new Intent(packageContext, AddMedActivity.class);
-        intent.putExtra(EXTRA_MED_ID, medId);
+        Bundle args = new Bundle();
+        args.putString(EXTRA_NAME, name);
+        intent.putExtra(EXTRA_BUNDLE, args);
         return intent;
     }
 
     public Fragment createFragment() {
-        return new AddMedFragment();
+       return new AddMedFragment();
+    }
+
+    @Override
+    public String getBundleName() {
+        return AddMedActivity.EXTRA_BUNDLE;
     }
 
 }
